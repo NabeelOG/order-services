@@ -36,12 +36,26 @@ func initDB() {
 	log.Println("Connected to PostgresSQL database!")
 }
 
+func enableCORS(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return 
+		}
+		next(w, r)
+	}
+}
+
 func main() {
 	initDB()
 	defer db.Close()
 
-	http.HandleFunc("/orders", ordersHandler)
-	http.HandleFunc("/orders/", orderHandler)
+	http.HandleFunc("/orders", enableCORS(ordersHandler))
+	http.HandleFunc("/orders/", enableCORS(orderHandler))
 
 	log.Println("Server starting on http://localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
